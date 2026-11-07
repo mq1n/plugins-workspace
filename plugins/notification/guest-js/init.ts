@@ -97,11 +97,21 @@ import type { Options } from './index'
     }
   })
 
-  void isPermissionGranted().then(function (response) {
-    if (response === null) {
+  // The init script is also injected into the webview's initial `about:blank`
+  // document. There the IPC request carries an opaque origin, the app's
+  // capability does not apply to the window, and the command is rejected. The
+  // script runs again once the real document loads, so a failed prime is
+  // ignored: the permission keeps the `default` value it starts with. Without
+  // this catch the rejection surfaces as an unhandled promise rejection.
+  void isPermissionGranted()
+    .then(function (response) {
+      if (response === null) {
+        setNotificationPermission('default')
+      } else {
+        setNotificationPermission(response ? 'granted' : 'denied')
+      }
+    })
+    .catch(function () {
       setNotificationPermission('default')
-    } else {
-      setNotificationPermission(response ? 'granted' : 'denied')
-    }
-  })
+    })
 })()
